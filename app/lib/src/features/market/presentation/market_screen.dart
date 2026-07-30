@@ -73,51 +73,64 @@ class _Header extends ConsumerWidget {
   final MarketState market;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Row(
-    children: [
-      Container(
-        width: 40,
-        height: 40,
-        decoration: const BoxDecoration(
-          color: AppColors.ink,
-          shape: BoxShape.circle,
-        ),
-        alignment: Alignment.center,
-        child: const Text(
-          'G',
-          style: TextStyle(
-            fontFamily: 'serif',
-            color: AppColors.paper,
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-      const SizedBox(width: 12),
-      const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context, WidgetRef ref) => LayoutBuilder(
+    builder: (context, constraints) {
+      final compact = constraints.maxWidth < 520;
+      return Row(
         children: [
-          Text(
-            'GAS / PULSE',
-            style: TextStyle(
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
               color: AppColors.ink,
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 2.2,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: const Text(
+              'G',
+              style: TextStyle(
+                fontFamily: 'serif',
+                color: AppColors.paper,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-          Text(
-            'Natural gas intelligence',
-            style: TextStyle(color: AppColors.quiet, fontSize: 11),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'GAS / PULSE',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.ink,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2.2,
+                  ),
+                ),
+                Text(
+                  'Natural gas intelligence',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: AppColors.quiet, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          _ConnectionPill(
+            status: market.connectionStatus,
+            compact: compact,
+            onRetry: () => ref.read(marketFeedProvider.notifier).retry(),
           ),
         ],
-      ),
-      const Spacer(),
-      _ConnectionPill(
-        status: market.connectionStatus,
-        onRetry: () => ref.read(marketFeedProvider.notifier).retry(),
-      ),
-    ],
+      );
+    },
   );
 }
 
@@ -263,26 +276,32 @@ class _ChartPanel extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'PRICE VELOCITY',
-                  style: TextStyle(
-                    color: AppColors.copperLight,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.5,
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'PRICE VELOCITY',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.copperLight,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.5,
+                    ),
                   ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Live one-minute feed',
-                  style: TextStyle(color: Color(0xFF9BAAB2), fontSize: 12),
-                ),
-              ],
+                  SizedBox(height: 4),
+                  Text(
+                    'Live one-minute feed',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Color(0xFF9BAAB2), fontSize: 12),
+                  ),
+                ],
+              ),
             ),
-            const Spacer(),
+            const SizedBox(width: 12),
             Text(
               market.current == null
                   ? 'Waiting for market'
@@ -504,18 +523,26 @@ class _Metric extends StatelessWidget {
 }
 
 class _ConnectionPill extends StatelessWidget {
-  const _ConnectionPill({required this.status, required this.onRetry});
+  const _ConnectionPill({
+    required this.status,
+    required this.compact,
+    required this.onRetry,
+  });
   final MarketConnectionStatus status;
+  final bool compact;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     final live = status == MarketConnectionStatus.live;
-    final label = switch (status) {
-      MarketConnectionStatus.connecting => 'CONNECTING',
-      MarketConnectionStatus.live => 'LIVE',
-      MarketConnectionStatus.reconnecting => 'RECONNECTING',
-      MarketConnectionStatus.disconnected => 'OFFLINE',
+    final label = switch ((status, compact)) {
+      (MarketConnectionStatus.connecting, true) => 'SYNC',
+      (MarketConnectionStatus.reconnecting, true) => 'SYNC',
+      (MarketConnectionStatus.disconnected, true) => 'OFF',
+      (MarketConnectionStatus.live, _) => 'LIVE',
+      (MarketConnectionStatus.connecting, false) => 'CONNECTING',
+      (MarketConnectionStatus.reconnecting, false) => 'RECONNECTING',
+      (MarketConnectionStatus.disconnected, false) => 'OFFLINE',
     };
     return Semantics(
       button: !live,
@@ -524,7 +551,8 @@ class _ConnectionPill extends StatelessWidget {
         onTap: live ? null : onRetry,
         borderRadius: BorderRadius.circular(100),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 13),
           decoration: BoxDecoration(
             color: live ? const Color(0x1420866B) : const Color(0x12C17845),
             borderRadius: BorderRadius.circular(100),

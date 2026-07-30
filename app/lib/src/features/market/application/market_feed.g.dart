@@ -47,7 +47,7 @@ final class GasPriceEndpointProvider extends $FunctionalProvider<Uri, Uri, Uri>
   }
 }
 
-String _$gasPriceEndpointHash() => r'82d1525f619be76205038102eeea7834e60fa381';
+String _$gasPriceEndpointHash() => r'76dde64dbf610d53ca4434d74a94809a609418e5';
 
 @ProviderFor(gasPriceRepository)
 final gasPriceRepositoryProvider = GasPriceRepositoryProvider._();
