@@ -7,6 +7,14 @@ reviews:
   high_level_summary: true
   poem: false
   review_status: true
+  path_filters:
+    - "!app/android/**"
+    - "!app/ios/**"
+    - "!app/linux/**"
+    - "!app/macos/**"
+    - "!app/windows/**"
+    - "!app/lib/**/*.freezed.dart"
+    - "!app/lib/**/*.g.dart"
   auto_review:
     enabled: true
     drafts: false
