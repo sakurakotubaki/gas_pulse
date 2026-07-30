@@ -1,6 +1,6 @@
 # Gas Pulse app
 
-バックエンドが配信する天然ガス価格をWebSocketで購読し、1分ごとの変化を折れ線グラフで表示するFlutterアプリです。
+バックエンドが配信する天然ガスと仮想東証株価をWebSocketで購読し、1分ごとの変化を可視化するFlutterアプリです。
 
 ## 技術構成
 
@@ -9,6 +9,8 @@
 - Freezed / json_serializable
 - web_socket_channel
 - fl_chart
+
+`ENERGY`ページは天然ガスを折れ線グラフ、`TSE DEMO`ページは6銘柄の騰落率をBarChartで表示します。下部ナビゲーションから切り替えられます。
 
 価格モデルと画面状態はFreezedでimmutableに定義しています。接続状態は`MarketConnectionStatus` enum、バックエンドの価格方向は`PriceStatus` enumで表現しています。
 

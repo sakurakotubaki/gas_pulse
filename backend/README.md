@@ -1,6 +1,6 @@
 # Gas Pulse backend
 
-Echo/Go製の天然ガス価格シミュレーションAPIです。サーバー内のバッチが価格を1分ごとに更新し、接続中のFlutterクライアントへWebSocketで配信します。
+Echo/Go製の天然ガス・仮想東証株価シミュレーションAPIです。サーバー内のバッチが価格を1分ごとに更新し、接続中のFlutterクライアントへWebSocketで配信します。
 
 ## 技術構成
 
@@ -52,6 +52,8 @@ PRICE_UPDATE_INTERVAL=2s go run .
 | `GET` | `/api/price` | 現在価格 |
 | `GET` | `/api/history` | 起動後の価格履歴（最大120件） |
 | `GET` | `/ws/price` | 現在価格と以後の更新をWebSocket配信 |
+| `GET` | `/api/stocks` | 仮想東証6銘柄の現在スナップショット |
+| `GET` | `/ws/stocks` | 仮想株価スナップショットをWebSocket配信 |
 
 配信JSON:
 
@@ -65,6 +67,8 @@ PRICE_UPDATE_INTERVAL=2s go run .
 ```
 
 `timestamp` はUnix time（ミリ秒）、`status` は `UP`、`DOWN`、`EQUAL` のいずれかです。WebSocket接続直後には待ち時間なしで現在値が1件届きます。
+
+株価APIも接続直後に現在値を返し、その後は同じバッチ間隔で6銘柄をまとめて配信します。`TSE-DEMO`は実在価格ではなくデモ用の仮想市場です。
 
 ## ローカル検証
 

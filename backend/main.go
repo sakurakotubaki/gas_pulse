@@ -13,6 +13,7 @@ import (
 
 	"gas-pulse/backend/internal/httpapi"
 	"gas-pulse/backend/internal/price"
+	"gas-pulse/backend/internal/stock"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -27,12 +28,14 @@ func main() {
 	defer stop()
 
 	prices := price.New(initialPrice, interval, time.Now().UnixNano())
+	stocks := stock.New(interval, time.Now().UnixNano()+1)
 	go prices.Run(ctx)
+	go stocks.Run(ctx)
 
 	e := echo.New()
 	e.HideBanner = true
 	e.Use(middleware.Recover(), middleware.Logger())
-	httpapi.NewHandler(prices).Register(e)
+	httpapi.NewHandler(prices, stocks).Register(e)
 
 	go func() {
 		log.Printf("gas price API listening on http://localhost:%s (update interval: %s)", port, interval)
