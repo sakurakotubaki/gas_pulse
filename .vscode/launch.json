@@ -1,0 +1,39 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Gas Pulse: dev",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "${workspaceFolder}/app",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--dart-define=APP_ENV=dev",
+        "--dart-define=BACKEND_SCHEME=ws",
+        "--dart-define=BACKEND_PORT=8080"
+      ]
+    },
+    {
+      "name": "Gas Pulse: prd",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "${workspaceFolder}/app",
+      "program": "lib/main.dart",
+      "flutterMode": "release",
+      "toolArgs": [
+        "--dart-define=APP_ENV=prd",
+        "--dart-define=BACKEND_SCHEME=wss",
+        "--dart-define=BACKEND_HOST=${input:prdBackendHost}",
+        "--dart-define=BACKEND_PORT=443"
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "prdBackendHost",
+      "type": "promptString",
+      "description": "本番WebSocket APIのホスト名（https://やパスは含めない）"
+    }
+  ]
+}

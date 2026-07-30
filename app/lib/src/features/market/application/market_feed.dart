@@ -10,6 +10,10 @@ part 'market_feed.g.dart';
 
 const _backendHost = String.fromEnvironment('BACKEND_HOST');
 const _backendPort = int.fromEnvironment('BACKEND_PORT', defaultValue: 8080);
+const _backendScheme = String.fromEnvironment(
+  'BACKEND_SCHEME',
+  defaultValue: 'ws',
+);
 
 @Riverpod(keepAlive: true)
 Uri gasPriceEndpoint(Ref ref) {
@@ -18,7 +22,12 @@ Uri gasPriceEndpoint(Ref ref) {
       : !kIsWeb && defaultTargetPlatform == TargetPlatform.android
       ? '10.0.2.2'
       : 'localhost';
-  return Uri(scheme: 'ws', host: host, port: _backendPort, path: '/ws/price');
+  return Uri(
+    scheme: _backendScheme,
+    host: host,
+    port: _backendPort,
+    path: '/ws/price',
+  );
 }
 
 @Riverpod(keepAlive: true)
