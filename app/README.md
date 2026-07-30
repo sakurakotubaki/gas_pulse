@@ -1,17 +1,54 @@
-# gas_pulse
+# Gas Pulse app
 
-A new Flutter project.
+バックエンドが配信する天然ガス価格をWebSocketで購読し、1分ごとの変化を折れ線グラフで表示するFlutterアプリです。
 
-## Getting Started
+## 技術構成
 
-This project is a starting point for a Flutter application.
+- Flutter 3.44.4 / Dart 3.12
+- Riverpod Generator
+- Freezed / json_serializable
+- web_socket_channel
+- fl_chart
 
-A few resources to get you started if this is your first Flutter project:
+価格モデルと画面状態はFreezedでimmutableに定義しています。接続状態は`MarketConnectionStatus` enum、バックエンドの価格方向は`PriceStatus` enumで表現しています。
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## 起動
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+ターミナル1でバックエンドを起動します。
+
+```sh
+cd ..
+task backend:dev
+```
+
+ターミナル2でアプリを起動します。
+
+```sh
+mise exec -- flutter run
+```
+
+バックエンドの既定接続先:
+
+- Android Emulator: `ws://10.0.2.2:8080/ws/price`
+- iOS Simulator / Web / Desktop: `ws://localhost:8080/ws/price`
+
+実機などで接続先を変える場合:
+
+```sh
+mise exec -- flutter run --dart-define=BACKEND_HOST=192.168.1.10
+```
+
+## コード生成
+
+```sh
+mise exec -- dart run build_runner build
+```
+
+## 検証
+
+```sh
+mise exec -- flutter analyze
+mise exec -- flutter test
+```
+
+価格更新タイマーはFlutter側にはありません。接続直後の現在値と、その後のバックエンドバッチのイベントをそのまま描画します。切断した場合のみ、最大15秒間隔の指数バックオフでWebSocketへ再接続します。
