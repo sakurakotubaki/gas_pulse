@@ -209,7 +209,7 @@ return $default(_that.connectionStatus,_that.ticks,_that.errorMessage);case _:
 
 class _MarketState extends MarketState {
   const _MarketState({this.connectionStatus = MarketConnectionStatus.connecting, final  List<GasPriceTick> ticks = const <GasPriceTick>[], this.errorMessage}): _ticks = ticks,super._();
-  
+
 
 @override@JsonKey() final  MarketConnectionStatus connectionStatus;
  final  List<GasPriceTick> _ticks;
