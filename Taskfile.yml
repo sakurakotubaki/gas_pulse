@@ -1,0 +1,57 @@
+version: "3"
+
+tasks:
+  backend:deps:
+    desc: Download backend dependencies
+    dir: backend
+    cmds:
+      - go mod download
+
+  backend:run:
+    desc: Run the backend with the production-like one-minute interval
+    dir: backend
+    cmds:
+      - go run .
+
+  backend:dev:
+    desc: Run the backend with a two-second interval for local verification
+    dir: backend
+    env:
+      PRICE_UPDATE_INTERVAL: 2s
+    cmds:
+      - go run .
+
+  backend:test:
+    desc: Run backend tests
+    dir: backend
+    cmds:
+      - go test ./...
+
+  backend:check:
+    desc: Format, vet, and test the backend
+    dir: backend
+    cmds:
+      - gofmt -w .
+      - go vet ./...
+      - go test ./...
+
+  backend:health:
+    desc: Call the local health endpoint
+    cmds:
+      - curl --fail --silent http://localhost:8080/health
+
+  backend:price:
+    desc: Fetch the current local gas price
+    cmds:
+      - curl --fail --silent http://localhost:8080/api/price
+
+  backend:ws:
+    desc: Watch local WebSocket price events
+    dir: backend
+    cmds:
+      - |
+        if command -v websocat >/dev/null 2>&1; then
+          websocat ws://localhost:8080/ws/price
+        else
+          go run ./cmd/wscheck
+        fi
