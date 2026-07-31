@@ -42,7 +42,8 @@ PRICE_UPDATE_INTERVAL=2s go run .
 | --- | --- | --- |
 | `PORT` | `8080` | HTTP待受ポート |
 | `PRICE_UPDATE_INTERVAL` | `1m` | バッチ更新間隔（例: `2s`） |
-| `INITIAL_PRICE` | `2.853` | 起動時の価格 |
+| `INITIAL_PRICE` | `2.853` | 起動時の天然ガス価格 |
+| `GOLD_INITIAL_PRICE` | `2650.00` | 起動時の金価格（XAU/USD） |
 
 ## API
 
@@ -54,6 +55,9 @@ PRICE_UPDATE_INTERVAL=2s go run .
 | `GET` | `/ws/price` | 現在価格と以後の更新をWebSocket配信 |
 | `GET` | `/api/stocks` | 仮想東証6銘柄の現在スナップショット |
 | `GET` | `/ws/stocks` | 仮想株価スナップショットをWebSocket配信 |
+| `GET` | `/api/gold` | 現在の金価格（XAU/USD） |
+| `GET` | `/api/gold/history` | 起動後の金価格履歴（最大120件） |
+| `GET` | `/ws/gold` | 金価格をWebSocket配信 |
 
 配信JSON:
 
@@ -67,6 +71,17 @@ PRICE_UPDATE_INTERVAL=2s go run .
 ```
 
 `timestamp` はUnix time（ミリ秒）、`status` は `UP`、`DOWN`、`EQUAL` のいずれかです。WebSocket接続直後には待ち時間なしで現在値が1件届きます。
+
+金価格API（XAU/USD）も同じ形式で配信します。
+
+```json
+{
+  "symbol": "XAU/USD",
+  "price": 2650.42,
+  "timestamp": 1718293847123,
+  "status": "UP"
+}
+```
 
 株価APIも接続直後に現在値を返し、その後は同じバッチ間隔で6銘柄をまとめて配信します。`TSE-DEMO`は実在価格ではなくデモ用の仮想市場です。
 
@@ -83,6 +98,7 @@ task backend:dev
 ```sh
 task backend:health
 task backend:price
+task backend:gold
 task backend:ws
 ```
 

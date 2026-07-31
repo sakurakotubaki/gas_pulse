@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"gas-pulse/backend/internal/gold"
 	"gas-pulse/backend/internal/price"
 	"gas-pulse/backend/internal/stock"
 
@@ -14,13 +15,15 @@ import (
 type Handler struct {
 	prices   *price.Service
 	stocks   *stock.Service
+	gold     *gold.Service
 	upgrader websocket.Upgrader
 }
 
-func NewHandler(prices *price.Service, stocks *stock.Service) *Handler {
+func NewHandler(prices *price.Service, stocks *stock.Service, goldSvc *gold.Service) *Handler {
 	return &Handler{
 		prices: prices,
 		stocks: stocks,
+		gold:   goldSvc,
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(*http.Request) bool {
 				// Development API. Restrict origins before exposing it publicly.
@@ -37,6 +40,9 @@ func (h *Handler) Register(e *echo.Echo) {
 	e.GET("/ws/price", h.priceStream)
 	e.GET("/api/stocks", h.currentStocks)
 	e.GET("/ws/stocks", h.stockStream)
+	e.GET("/api/gold", h.currentGold)
+	e.GET("/api/gold/history", h.goldHistory)
+	e.GET("/ws/gold", h.goldStream)
 }
 
 func (h *Handler) currentStocks(c echo.Context) error {
@@ -101,6 +107,64 @@ func (h *Handler) currentPrice(c echo.Context) error {
 
 func (h *Handler) history(c echo.Context) error {
 	return c.JSON(http.StatusOK, h.prices.History())
+}
+
+func (h *Handler) currentGold(c echo.Context) error {
+	return c.JSON(http.StatusOK, h.gold.Current())
+}
+
+func (h *Handler) goldHistory(c echo.Context) error {
+	return c.JSON(http.StatusOK, h.gold.History())
+}
+
+func (h *Handler) goldStream(c echo.Context) error {
+	connection, err := h.upgrader.Upgrade(c.Response(), c.Request(), nil)
+	if err != nil {
+		return err
+	}
+	defer connection.Close()
+
+	updates, unsubscribe := h.gold.Subscribe()
+	defer unsubscribe()
+
+	if err := connection.WriteJSON(h.gold.Current()); err != nil {
+		return nil
+	}
+
+	disconnected := make(chan struct{})
+	go func() {
+		defer close(disconnected)
+		for {
+			if _, _, err := connection.ReadMessage(); err != nil {
+				return
+			}
+		}
+	}()
+
+	heartbeat := time.NewTicker(30 * time.Second)
+	defer heartbeat.Stop()
+
+	for {
+		select {
+		case tick, ok := <-updates:
+			if !ok {
+				return nil
+			}
+			_ = connection.SetWriteDeadline(time.Now().Add(5 * time.Second))
+			if err := connection.WriteJSON(tick); err != nil {
+				return nil
+			}
+		case <-heartbeat.C:
+			_ = connection.SetWriteDeadline(time.Now().Add(5 * time.Second))
+			if err := connection.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return nil
+			}
+		case <-disconnected:
+			return nil
+		case <-c.Request().Context().Done():
+			return nil
+		}
+	}
 }
 
 func (h *Handler) priceStream(c echo.Context) error {
