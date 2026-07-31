@@ -50,6 +50,11 @@ tasks:
     cmds:
       - curl --fail --silent http://localhost:8080/api/stocks
 
+  backend:gold:
+    desc: Fetch the current local gold price
+    cmds:
+      - curl --fail --silent http://localhost:8080/api/gold
+
   backend:ws:
     desc: Watch local WebSocket price events
     dir: backend
@@ -70,4 +75,15 @@ tasks:
           websocat ws://localhost:8080/ws/stocks
         else
           go run ./cmd/wscheck ws://localhost:8080/ws/stocks
+        fi
+
+  backend:gold-ws:
+    desc: Watch local gold WebSocket events
+    dir: backend
+    cmds:
+      - |
+        if command -v websocat >/dev/null 2>&1; then
+          websocat ws://localhost:8080/ws/gold
+        else
+          go run ./cmd/wscheck ws://localhost:8080/ws/gold
         fi

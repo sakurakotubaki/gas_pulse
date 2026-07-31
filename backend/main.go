@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"gas-pulse/backend/internal/gold"
 	"gas-pulse/backend/internal/httpapi"
 	"gas-pulse/backend/internal/price"
 	"gas-pulse/backend/internal/stock"
@@ -22,20 +23,24 @@ import (
 func main() {
 	interval := envDuration("PRICE_UPDATE_INTERVAL", time.Minute)
 	initialPrice := envFloat("INITIAL_PRICE", 2.853)
+	goldInitialPrice := envFloat("GOLD_INITIAL_PRICE", 2650.00)
 	port := envString("PORT", "8080")
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	prices := price.New(initialPrice, interval, time.Now().UnixNano())
-	stocks := stock.New(interval, time.Now().UnixNano()+1)
+	seed := time.Now().UnixNano()
+	prices := price.New(initialPrice, interval, seed)
+	stocks := stock.New(interval, seed+1)
+	goldSvc := gold.New(goldInitialPrice, interval, seed+2)
 	go prices.Run(ctx)
 	go stocks.Run(ctx)
+	go goldSvc.Run(ctx)
 
 	e := echo.New()
 	e.HideBanner = true
 	e.Use(middleware.Recover(), middleware.Logger())
-	httpapi.NewHandler(prices, stocks).Register(e)
+	httpapi.NewHandler(prices, stocks, goldSvc).Register(e)
 
 	go func() {
 		log.Printf("gas price API listening on http://localhost:%s (update interval: %s)", port, interval)
