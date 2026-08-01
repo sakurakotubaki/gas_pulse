@@ -1,6 +1,6 @@
 # Gas Pulse backend
 
-Echo/Go製の天然ガス・仮想東証株価シミュレーションAPIです。サーバー内のバッチが価格を1分ごとに更新し、接続中のFlutterクライアントへWebSocketで配信します。
+Echo/Go製の天然ガス・仮想東証株価・金・石油シミュレーションAPIです。サーバー内のバッチが価格を1分ごとに更新し、接続中のFlutterクライアントへWebSocketで配信します。
 
 ## 技術構成
 
@@ -9,6 +9,7 @@ Echo/Go製の天然ガス・仮想東証株価シミュレーションAPIです�
 - Gorilla WebSocket（リアルタイム配信）
 - Goroutine + `time.Ticker`（1分ごとの価格更新バッチ）
 - インメモリストア（現在値と直近120件の履歴）
+- Redis（任意。`GET /api/oil/history` のキャッシュ）
 
 外部の価格データやDBには接続しません。プロセスを再起動すると履歴はリセットされます。
 
@@ -36,6 +37,12 @@ go mod download
 PRICE_UPDATE_INTERVAL=2s go run .
 ```
 
+Redis 付きで API と Redis をまとめて起動する場合（リポジトリルート）:
+
+```sh
+docker compose up --build
+```
+
 設定できる環境変数:
 
 | 変数 | 既定値 | 用途 |
@@ -44,6 +51,10 @@ PRICE_UPDATE_INTERVAL=2s go run .
 | `PRICE_UPDATE_INTERVAL` | `1m` | バッチ更新間隔（例: `2s`） |
 | `INITIAL_PRICE` | `2.853` | 起動時の天然ガス価格 |
 | `GOLD_INITIAL_PRICE` | `2650.00` | 起動時の金価格（XAU/USD） |
+| `OIL_INITIAL_PRICE` | `78.50` | 起動時の石油価格（OIL/USD） |
+| `USE_REDIS` | `false` | OIL history の Redis キャッシュ全体スイッチ |
+| `REDIS_ADDR` | `localhost:6379` | Redis アドレス |
+| `REDIS_TTL` | `30s` | `oil:history` キャッシュ TTL |
 
 ## API
 
@@ -58,6 +69,15 @@ PRICE_UPDATE_INTERVAL=2s go run .
 | `GET` | `/api/gold` | 現在の金価格（XAU/USD） |
 | `GET` | `/api/gold/history` | 起動後の金価格履歴（最大120件） |
 | `GET` | `/ws/gold` | 金価格をWebSocket配信 |
+| `GET` | `/api/oil` | 現在の石油価格（OIL/USD） |
+| `GET` | `/api/oil/history` | 石油価格履歴（最大120件、Redis 対象） |
+| `GET` | `/ws/oil` | 石油価格をWebSocket配信 |
+
+`GET /api/oil/history` は次のキャッシュ制御に従います。
+
+- `USE_REDIS=false` → 常に直読（応答ヘッダ `X-Cache: DISABLED`）
+- `?no_cache=true` → Redis バイパス（`X-Cache: BYPASS`）
+- それ以外で Redis 有効時 → `HIT` / `MISS`
 
 配信JSON:
 
@@ -83,6 +103,17 @@ PRICE_UPDATE_INTERVAL=2s go run .
 }
 ```
 
+石油価格API（OIL/USD）も同じ形式です。
+
+```json
+{
+  "symbol": "OIL/USD",
+  "price": 78.42,
+  "timestamp": 1718293847123,
+  "status": "UP"
+}
+```
+
 株価APIも接続直後に現在値を返し、その後は同じバッチ間隔で6銘柄をまとめて配信します。`TSE-DEMO`は実在価格ではなくデモ用の仮想市場です。
 
 ## ローカル検証
@@ -99,6 +130,7 @@ task backend:dev
 task backend:health
 task backend:price
 task backend:gold
+task backend:oil
 task backend:ws
 ```
 
