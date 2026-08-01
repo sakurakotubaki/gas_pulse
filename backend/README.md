@@ -79,6 +79,8 @@ docker compose up --build
 - `?no_cache=true` → Redis バイパス（`X-Cache: BYPASS`）
 - それ以外で Redis 有効時 → `HIT` / `MISS`
 
+Compose 起動・`X-Cache` の見方・リクエスト/レスポンス例・PR 作成手順は [`docs/oil_redis_howto.md`](../docs/oil_redis_howto.md) を参照してください。
+
 配信JSON:
 
 ```json
@@ -136,6 +138,8 @@ task backend:ws
 ```
 
 `backend:ws` は `websocat` がインストール済みならそれを使い、なければGo製の検証クライアントを実行します。停止は `Ctrl+C` です。
+
+Redis 付きでの履歴キャッシュ確認（`docker compose up`、`X-Cache`、TTL）は [`docs/oil_redis_howto.md`](../docs/oil_redis_howto.md) を参照してください。
 
 テストと静的解析:
 
