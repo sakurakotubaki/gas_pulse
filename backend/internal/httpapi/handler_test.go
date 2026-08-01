@@ -180,5 +180,9 @@ func TestOilHistoryCacheHeaders(t *testing.T) {
 		if hitRec.Header().Get("X-Cache") != "HIT" {
 			t.Fatalf("second X-Cache = %q, want HIT", hitRec.Header().Get("X-Cache"))
 		}
+		// Echo v4.13 JSON/JSONBlob both use MIMEApplicationJSON ("application/json").
+		if hitRec.Header().Get("Content-Type") != echo.MIMEApplicationJSON {
+			t.Fatalf("Content-Type = %q, want %q", hitRec.Header().Get("Content-Type"), echo.MIMEApplicationJSON)
+		}
 	})
 }

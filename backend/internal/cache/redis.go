@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
+
+const failureLogInterval = 30 * time.Second
 
 // HistoryCache stores opaque JSON blobs for oil history responses.
 type HistoryCache interface {
@@ -19,10 +22,13 @@ type HistoryCache interface {
 // RedisCache implements HistoryCache with go-redis.
 type RedisCache struct {
 	client *redis.Client
+
+	logMu    sync.Mutex
+	lastFail time.Time
 }
 
-// NewRedisCache dials Redis and pings once. On ping failure it logs and still
-// returns a client so callers can fall back per-request.
+// NewRedisCache dials Redis and pings once. Ping failure closes the client and
+// returns an error so callers can leave caching disabled.
 func NewRedisCache(addr string) (*RedisCache, error) {
 	if addr == "" {
 		addr = "localhost:6379"
@@ -31,7 +37,8 @@ func NewRedisCache(addr string) (*RedisCache, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	if err := client.Ping(ctx).Err(); err != nil {
-		log.Printf("redis ping failed (%s): %v; history will fall back to direct reads", addr, err)
+		_ = client.Close()
+		return nil, fmt.Errorf("redis ping %s: %w", addr, err)
 	}
 	return &RedisCache{client: client}, nil
 }
@@ -42,7 +49,7 @@ func (c *RedisCache) Get(ctx context.Context, key string) ([]byte, bool) {
 		return nil, false
 	}
 	if err != nil {
-		log.Printf("redis GET %s: %v", key, err)
+		c.logFailure("GET", key, err)
 		return nil, false
 	}
 	return raw, true
@@ -54,7 +61,7 @@ func (c *RedisCache) SetJSON(ctx context.Context, key string, value any, ttl tim
 		return fmt.Errorf("marshal cache value: %w", err)
 	}
 	if err := c.client.Set(ctx, key, raw, ttl).Err(); err != nil {
-		log.Printf("redis SET %s: %v", key, err)
+		c.logFailure("SET", key, err)
 		return err
 	}
 	return nil
@@ -65,4 +72,15 @@ func (c *RedisCache) Close() error {
 		return nil
 	}
 	return c.client.Close()
+}
+
+func (c *RedisCache) logFailure(op, key string, err error) {
+	now := time.Now()
+	c.logMu.Lock()
+	defer c.logMu.Unlock()
+	if !c.lastFail.IsZero() && now.Sub(c.lastFail) < failureLogInterval {
+		return
+	}
+	c.lastFail = now
+	log.Printf("redis %s %s: %v", op, key, err)
 }

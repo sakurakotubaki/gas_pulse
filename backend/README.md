@@ -131,6 +131,7 @@ task backend:health
 task backend:price
 task backend:gold
 task backend:oil
+task backend:oil-ws
 task backend:ws
 ```
 

@@ -37,3 +37,22 @@ func TestHistoryReturnsCopy(t *testing.T) {
 		t.Fatal("History exposed internal storage")
 	}
 }
+
+func TestUpdateNowClampsToBounds(t *testing.T) {
+	service := New(minPrice, time.Minute, 7)
+	service.current.Price = minPrice
+	for i := 0; i < 1000; i++ {
+		tick := service.UpdateNow()
+		if tick.Price < minPrice || tick.Price > maxPrice {
+			t.Fatalf("price = %v, want within [%v, %v]", tick.Price, minPrice, maxPrice)
+		}
+	}
+
+	service.current.Price = maxPrice
+	for i := 0; i < 1000; i++ {
+		tick := service.UpdateNow()
+		if tick.Price < minPrice || tick.Price > maxPrice {
+			t.Fatalf("price = %v, want within [%v, %v]", tick.Price, minPrice, maxPrice)
+		}
+	}
+}

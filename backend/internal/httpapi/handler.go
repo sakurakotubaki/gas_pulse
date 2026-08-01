@@ -165,7 +165,7 @@ func (h *Handler) oilHistory(c echo.Context) error {
 
 	if raw, ok := h.cache.Get(c.Request().Context(), oilHistoryCacheKey); ok {
 		c.Response().Header().Set("X-Cache", "HIT")
-		return c.Blob(http.StatusOK, "application/json", raw)
+		return c.JSONBlob(http.StatusOK, raw)
 	}
 
 	ticks := h.oil.History()
@@ -232,6 +232,12 @@ func (h *Handler) oilStream(c echo.Context) error {
 		return err
 	}
 	defer connection.Close()
+
+	const pongWait = 60 * time.Second
+	_ = connection.SetReadDeadline(time.Now().Add(pongWait))
+	connection.SetPongHandler(func(string) error {
+		return connection.SetReadDeadline(time.Now().Add(pongWait))
+	})
 
 	updates, unsubscribe := h.oil.Subscribe()
 	defer unsubscribe()
