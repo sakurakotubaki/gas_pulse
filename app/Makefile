@@ -1,7 +1,7 @@
 .PHONY: setup
 setup:
-	flutter clean
-	flutter pub get
+	mise exec -- flutter clean
+	mise exec -- flutter pub get
 
 .PHONY: watch
 watch:
