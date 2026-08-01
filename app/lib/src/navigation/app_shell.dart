@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gas_pulse/src/features/gold/presentation/gold_screen.dart';
 import 'package:gas_pulse/src/features/market/presentation/market_screen.dart';
+import 'package:gas_pulse/src/features/oil/presentation/oil_screen.dart';
 import 'package:gas_pulse/src/features/stocks/presentation/stock_screen.dart';
 import 'package:gas_pulse/src/theme/app_theme.dart';
 
@@ -18,7 +19,12 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) => Scaffold(
     body: IndexedStack(
       index: _index,
-      children: const [MarketScreen(), StockScreen(), GoldScreen()],
+      children: const [
+        MarketScreen(),
+        StockScreen(),
+        GoldScreen(),
+        OilScreen(),
+      ],
     ),
     bottomNavigationBar: NavigationBar(
       selectedIndex: _index,
@@ -41,6 +47,11 @@ class _AppShellState extends State<AppShell> {
           icon: Icon(Icons.monetization_on_outlined),
           selectedIcon: Icon(Icons.monetization_on),
           label: 'GOLD',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.oil_barrel_outlined),
+          selectedIcon: Icon(Icons.oil_barrel),
+          label: 'OIL',
         ),
       ],
     ),
