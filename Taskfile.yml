@@ -55,6 +55,11 @@ tasks:
     cmds:
       - curl --fail --silent http://localhost:8080/api/gold
 
+  backend:oil:
+    desc: Fetch the current local oil price
+    cmds:
+      - curl --fail --silent http://localhost:8080/api/oil
+
   backend:ws:
     desc: Watch local WebSocket price events
     dir: backend
@@ -86,4 +91,15 @@ tasks:
           websocat ws://localhost:8080/ws/gold
         else
           go run ./cmd/wscheck ws://localhost:8080/ws/gold
+        fi
+
+  backend:oil-ws:
+    desc: Watch local oil WebSocket events
+    dir: backend
+    cmds:
+      - |
+        if command -v websocat >/dev/null 2>&1; then
+          websocat ws://localhost:8080/ws/oil
+        else
+          go run ./cmd/wscheck ws://localhost:8080/ws/oil
         fi
